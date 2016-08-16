@@ -1,6 +1,8 @@
+# Hour log
+
 15.8
 
-2h Setting up development environment, installing vm, cloning repository, refamiliarating with framework$
+2h Setting up development environment, installing vm, cloning repository, refamiliarating with framework etc.
 
 16.8
 
