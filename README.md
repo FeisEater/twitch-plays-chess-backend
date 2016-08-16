@@ -1,3 +1,12 @@
+15.8
+
+2h Setting up development environment, installing vm, cloning repository, refamiliarating with framework$
+
+16.8
+
+1h Forking repositories
+
+
 # simple node bootstrap [![Build Status](https://travis-ci.org/TeemuKoivisto/simple-node-bootstrap.svg?branch=master)](https://travis-ci.org/TeemuKoivisto/simple-node-bootstrap) [![Coverage Status](https://coveralls.io/repos/github/TeemuKoivisto/simple-node-bootstrap/badge.svg?branch=master)](https://coveralls.io/github/TeemuKoivisto/simple-node-bootstrap?branch=master)
 Simple Node.js bootstrap with Express and ES6 / ES2015. [Heroku deployment](https://simple-node-bootstrap.herokuapp.com)
 
