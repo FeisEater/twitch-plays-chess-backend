@@ -7,6 +7,7 @@ const auth = require("../middleware/authentication");
 
 const itemCtrl = require("../controllers/item");
 const userCtrl = require("../controllers/user");
+const moveCtrl = require("../controllers/move");
 
 const authTest = (req, res) => {
   res.json({
@@ -29,6 +30,9 @@ router.post("/item", itemCtrl.saveOne);
 // router.delete("/item/:id", itemCtrl.deleteOne);
 
 router.put("/user/:id", userCtrl.updateOne);
+
+router.get("/move", moveCtrl.findAll);
+router.post("/move", moveCtrl.saveOne);
 
 // Routes accessisable only for admin
 

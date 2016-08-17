@@ -8,6 +8,10 @@
 
 1h Forking repositories
 
+17.8
+
+0,5h Setting up and testing mlab database with backend
+2h Implementing chess move model and controller with format validation
 
 # simple node bootstrap [![Build Status](https://travis-ci.org/TeemuKoivisto/simple-node-bootstrap.svg?branch=master)](https://travis-ci.org/TeemuKoivisto/simple-node-bootstrap) [![Coverage Status](https://coveralls.io/repos/github/TeemuKoivisto/simple-node-bootstrap/badge.svg?branch=master)](https://coveralls.io/github/TeemuKoivisto/simple-node-bootstrap?branch=master)
 Simple Node.js bootstrap with Express and ES6 / ES2015. [Heroku deployment](https://simple-node-bootstrap.herokuapp.com)

@@ -19,7 +19,16 @@ const UserSchema = new Schema({
   passwordHash: { type: String, required: true },
 });
 
+const MoveSchema = new Schema({
+  created: { type: Date, default: Date.now },
+  position: { type: Number, required: true },
+  start: { type: String, required: true },
+  end: { type: String, required: true },
+  other: { type: String, default: "" }
+});
+
 module.exports = {
   Item: mongoose.model("Item", ItemSchema),
   User: mongoose.model("User", UserSchema),
+  Move: mongoose.model("Move", MoveSchema)
 };
