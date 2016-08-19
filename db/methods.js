@@ -47,6 +47,7 @@ module.exports.addTestData = () => Promise.all([
     passwordHash: "$2a$10$Fs0N7KD/xUH4NAfW2s1MoOh/yH3G7mAtGycMY5tMUvCGqiWWdaSue",
     role: "user",
   }),
+  models.Game.create({}),
 ])
 
 module.exports.dump = () => {

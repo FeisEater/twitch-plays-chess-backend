@@ -14,7 +14,15 @@
 
 2h Implementing chess move model and controller with format validation
 
+18.8
+
 3,5h Experimenting with deployment to DigitalOcean
+
+19.8
+
+1h Finished deployment to DigitalOcean, set up Travis
+
+2,5h Added Game model to contain Move instances
 
 # simple node bootstrap [![Build Status](https://travis-ci.org/TeemuKoivisto/simple-node-bootstrap.svg?branch=master)](https://travis-ci.org/TeemuKoivisto/simple-node-bootstrap) [![Coverage Status](https://coveralls.io/repos/github/TeemuKoivisto/simple-node-bootstrap/badge.svg?branch=master)](https://coveralls.io/github/TeemuKoivisto/simple-node-bootstrap?branch=master)
 Simple Node.js bootstrap with Express and ES6 / ES2015. [Heroku deployment](https://simple-node-bootstrap.herokuapp.com)

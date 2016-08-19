@@ -1,6 +1,7 @@
 "use strict";
 
 const Move = require("../models/Move");
+const Game = require("../models/Game");
 
 const ValidationError = require("../config/errors").ValidationError;
 
@@ -9,9 +10,12 @@ const ChessLogic = require("../services/ChessLogic");
 var currentMove = 1;
 
 module.exports.findAll = (req, res) => {
-  Move
-  .findAll({
-    order: [["position", "ASC"]]
+  Promise.resolve()
+  .then(() => {
+    return Game.findOne({ over: false });
+  })
+  .then(foundGame => {
+    return Move.findAll({ game: foundGame});
   })
   .then(moves => {
     res.status(200).send(moves);
@@ -28,18 +32,26 @@ module.exports.findAll = (req, res) => {
 function progressMove() {
   var result = currentMove;
   currentMove++;
+  console.log(currentMove);
   return result;
 }
 
 module.exports.saveOne = (req, res) => {
+  var currentGame = {};
+  var savedMove = {};
   Promise.resolve()
   .then(() => {
+    return Game.findOne({ over: false });
+  })
+  .then(game => {
     if (ChessLogic.validateMove(req.body)) {
-      return Move.saveOne({
-        "start": req.body.start,
-        "end": req.body.end,
-        "position": progressMove()
-      });
+      currentGame = game;
+      var newMove = {};
+      newMove.start = req.body.start;
+      newMove.end = req.body.end;
+      newMove.position = progressMove();
+      newMove.game = currentGame;
+      return Move.saveOne(newMove);
     }
   })
   .then(move => {
