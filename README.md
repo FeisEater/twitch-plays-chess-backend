@@ -14,6 +14,8 @@
 
 2h Implementing chess move model and controller with format validation
 
+18.8
+
 3,5h Experimenting with deployment to DigitalOcean
 
 # simple node bootstrap [![Build Status](https://travis-ci.org/TeemuKoivisto/simple-node-bootstrap.svg?branch=master)](https://travis-ci.org/TeemuKoivisto/simple-node-bootstrap) [![Coverage Status](https://coveralls.io/repos/github/TeemuKoivisto/simple-node-bootstrap/badge.svg?branch=master)](https://coveralls.io/github/TeemuKoivisto/simple-node-bootstrap?branch=master)
