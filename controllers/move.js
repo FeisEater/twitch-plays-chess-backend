@@ -7,8 +7,6 @@ const ValidationError = require("../config/errors").ValidationError;
 
 const ChessLogic = require("../services/ChessLogic");
 
-var currentMove = 1;
-
 module.exports.findAll = (req, res) => {
   Promise.resolve()
   .then(() => {
@@ -18,6 +16,7 @@ module.exports.findAll = (req, res) => {
     return Move.findAll({ game: foundGame});
   })
   .then(moves => {
+    ChessLogic.rebuildBoard(moves);
     res.status(200).send(moves);
   })
   .catch(err => {
@@ -28,13 +27,6 @@ module.exports.findAll = (req, res) => {
     });
   });
 };
-
-function progressMove() {
-  var result = currentMove;
-  currentMove++;
-  console.log(currentMove);
-  return result;
-}
 
 module.exports.saveOne = (req, res) => {
   var currentGame = {};
@@ -49,12 +41,13 @@ module.exports.saveOne = (req, res) => {
       var newMove = {};
       newMove.start = req.body.start;
       newMove.end = req.body.end;
-      newMove.position = progressMove();
+      newMove.position = ChessLogic.moveNum;
       newMove.game = currentGame;
       return Move.saveOne(newMove);
     }
   })
   .then(move => {
+    ChessLogic.makeMove(move);
     res.status(200).send(move);
   })
   .catch(err => {
