@@ -17,7 +17,10 @@ module.exports.findAll = (req, res) => {
   })
   .then(moves => {
     ChessLogic.rebuildBoard(moves);
-    res.status(200).send(moves);
+    res.status(200).send({
+      moves: moves,
+      availableMoves: ChessLogic.getAvailableMoves()
+    });
   })
   .catch(err => {
     res.status(500).send({

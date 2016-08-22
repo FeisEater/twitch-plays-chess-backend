@@ -55,7 +55,7 @@ class ChessLogic {
         }
         output += this.board[x][y].color.charAt(0) + this.board[x][y].rule.name.substring(0,2) + " ";
       }
-      console.log(output);
+      //console.log(output);
     }
   }
   
@@ -138,7 +138,10 @@ class ChessLogic {
     var startCoord = this.toArrayCoordinates(move.start);
     var endCoord = this.toArrayCoordinates(move.end);
     var figure = this.board[startCoord.x][startCoord.y];
-    var validMoves = figure.rule(startCoord.x, startCoord.y);
+    var validMoves = figure.rule(this, startCoord.x, startCoord.y);
+    for (var i = 0; i < validMoves.length; i++) {
+      console.log(validMoves[i]);
+    }
     for (var i = 0; i < validMoves.length; i++) {
       if (validMoves[i].x == endCoord.x && validMoves[i].y == endCoord.y) {
         return;
@@ -146,7 +149,7 @@ class ChessLogic {
     }
     throw new ValidationError("Move is not according to rules.");
   }
-    
+  
   checkPosition(x, y) {
     if (x < 0 || x >= 8 || y < 0 || y >= 8) {
       return "out of bounds";
@@ -162,14 +165,14 @@ class ChessLogic {
     }
   }
   
-  pawn(x, y) {
-    var color = this.colorOfTurn();
+  pawn(t, x, y) {
+    var color = t.colorOfTurn();
     var result = [];
     var newY = (color == "black") ? (y + 1) : (y - 1);
     if (newY < 0 || newY >= 8) {
       return result;
     }
-    if (!this.board[x][newY]) {
+    if (!t.board[x][newY]) {
       result.push({x: x, y: newY});
       var startPawnRow = (color == "black") ? 1 : 6;
       if (y == startPawnRow) {
@@ -177,10 +180,10 @@ class ChessLogic {
         result.push({x: x, y: doubleMoveY});
       }
     }
-    if (this.checkPosition(x - 1, newY) == "occupied by opponent") {
+    if (t.checkPosition(x - 1, newY) == "occupied by opponent") {
       result.push({x: x - 1, y: newY});
     }
-    if (this.checkPosition(x + 1, newY) == "occupied by opponent") {
+    if (t.checkPosition(x + 1, newY) == "occupied by opponent") {
       result.push({x: x + 1, y: newY});
     }
     return result;
@@ -201,12 +204,12 @@ class ChessLogic {
     }
   }
   
-  rook(x, y) {
+  rook(t, x, y) {
     var result = [];
-    result = this.linearMoveCheck(result, x, y, 1, 0);
-    result = this.linearMoveCheck(result, x, y, -1, 0);
-    result = this.linearMoveCheck(result, x, y, 0, 1);
-    result = this.linearMoveCheck(result, x, y, 0, -1);
+    result = t.linearMoveCheck(result, x, y, 1, 0);
+    result = t.linearMoveCheck(result, x, y, -1, 0);
+    result = t.linearMoveCheck(result, x, y, 0, 1);
+    result = t.linearMoveCheck(result, x, y, 0, -1);
     return result;
   }
   
@@ -218,49 +221,49 @@ class ChessLogic {
     return array;
   }
   
-  knight(x, y) {
+  knight(t, x, y) {
     var result = [];
-    result = this.positionCanBeOccupied(result, x + 2, y + 1);
-    result = this.positionCanBeOccupied(result, x + 1, y + 2);
-    result = this.positionCanBeOccupied(result, x - 2, y + 1);
-    result = this.positionCanBeOccupied(result, x - 1, y + 2);
-    result = this.positionCanBeOccupied(result, x + 2, y - 1);
-    result = this.positionCanBeOccupied(result, x + 1, y - 2);
-    result = this.positionCanBeOccupied(result, x - 2, y - 1);
-    result = this.positionCanBeOccupied(result, x - 1, y - 2);
+    result = t.positionCanBeOccupied(result, x + 2, y + 1);
+    result = t.positionCanBeOccupied(result, x + 1, y + 2);
+    result = t.positionCanBeOccupied(result, x - 2, y + 1);
+    result = t.positionCanBeOccupied(result, x - 1, y + 2);
+    result = t.positionCanBeOccupied(result, x + 2, y - 1);
+    result = t.positionCanBeOccupied(result, x + 1, y - 2);
+    result = t.positionCanBeOccupied(result, x - 2, y - 1);
+    result = t.positionCanBeOccupied(result, x - 1, y - 2);
     return result;
   }
   
-  bishop(x, y) {
+  bishop(t, x, y) {
     var result = [];
-    result = this.linearMoveCheck(result, x, y, 1, 1);
-    result = this.linearMoveCheck(result, x, y, -1, 1);
-    result = this.linearMoveCheck(result, x, y, -1, 1);
-    result = this.linearMoveCheck(result, x, y, 1, -1);
+    result = t.linearMoveCheck(result, x, y, 1, 1);
+    result = t.linearMoveCheck(result, x, y, -1, 1);
+    result = t.linearMoveCheck(result, x, y, 1, -1);
+    result = t.linearMoveCheck(result, x, y, -1, -1);
     return result;
   }
   
-  queen(x, y) {
+  queen(t, x, y) {
     var result = [];
     for (var dx = -1; dx <= 1; dx++) {
       for (var dy = -1; dy <= 1; dy++) {
         if (dx == 0 && dy == 0) {
           continue;
         }
-        result = this.linearMoveCheck(result, x, y, dx, dy);
+        result = t.linearMoveCheck(result, x, y, dx, dy);
       }
     }
     return result;
   }
   
-  king(x, y) {
+  king(t, x, y) {
     var result = [];
     for (var dx = -1; dx <= 1; dx++) {
       for (var dy = -1; dy <= 1; dy++) {
         if (dx == 0 && dy == 0) {
           continue;
         }
-        result = this.positionCanBeOccupied(result, x + dx, y + dy);
+        result = t.positionCanBeOccupied(result, x + dx, y + dy);
       }
     }
     return result;
@@ -274,6 +277,32 @@ class ChessLogic {
     this.board[coordEnd.x][coordEnd.y] = figure;
     this.moveNum++;
     this.visualizeBoard();
+  }
+  
+  coordinatesToChessNotation(x, y) {
+    var letters = "abcdefgh";
+    var numbers = "87654321";
+    return letters.charAt(x) + numbers.charAt(y);
+  }
+  
+  getAvailableMoves() {
+    var color = this.colorOfTurn();
+    var result = [];
+    for (var x = 0; x < 8; x++) {
+      for (var y = 0; y < 8; y++) {
+        if (this.board[x][y] && this.board[x][y].color == color) {
+          var moves = this.board[x][y].rule(this, x, y);
+          for (var i = 0; i < moves.length; i++) {
+            moves[i] = this.coordinatesToChessNotation(moves[i].x, moves[i].y);
+          }
+          result.push({
+            start: this.coordinatesToChessNotation(x, y),
+            end: moves
+          });
+        }
+      }
+    }
+    return result;
   }
 }
 
