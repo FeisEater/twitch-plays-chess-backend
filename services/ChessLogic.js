@@ -16,6 +16,14 @@ class ChessLogic {
     this.placeFigures("black");
     this.placeFigures("white");
     this.moveNum = 1;
+    this.castling = {
+      black: {kingSide: true, queenSide: true},
+      white: {kingSide: true, queenSide: true}
+    };
+    this.enPassant = {
+      black: false,
+      white: false
+    };
     //this.visualizeBoard();
   }
   
@@ -57,23 +65,26 @@ class ChessLogic {
       }
       console.log(output);
     }
+    console.log(this.colorOfTurn());
+    console.log(this.castling);
   }
   
   rebuildBoard(moves) {
     this.initializeBoard();
     moves.sort(function(a,b){return a.position - b.position;});    
     for (var i = 0; i < moves.length; i++) {
-      this.makeMove(moves[i]);
+      this.makeMove(moves[i], false);
     }
   }
   
   validateMove(move) {
+    //this.visualizeBoard();
     this.correctFormat(move);
     this.actualMovement(move);
     this.playerCanMoveFigure(move.start);
     this.playerNotCapturingOwnFigure(move.end);
     this.figureMovesAccordingToRules(move);
-    this.kingNotThreatenedNextTurn(move);
+    this.kingNotInCheckNextTurn(move);
     return true;
   }
   
@@ -140,6 +151,10 @@ class ChessLogic {
     var endCoord = this.toArrayCoordinates(move.end);
     var figure = this.board[startCoord.x][startCoord.y];
     var validMoves = figure.rule(this, startCoord.x, startCoord.y);
+    if (figure.rule == this.king) {
+      validMoves = this.castlingMove(validMoves, "kingSide");
+      validMoves = this.castlingMove(validMoves, "queenSide");
+    }
     for (var i = 0; i < validMoves.length; i++) {
       if (validMoves[i].x == endCoord.x && validMoves[i].y == endCoord.y) {
         return;
@@ -189,11 +204,16 @@ class ChessLogic {
     return result;
   }
   
-  linearMoveCheck(array, x, y, dx, dy) {
+  linearMoveCheck(array, x, y, dx, dy, debug = false) {
     for (var i = 0; i < 8; i++) {
       x += dx;
       y += dy;
       var positionStatus = this.checkPosition(x, y);
+      if (debug) {
+        //console.log(x + " " + y + ":");
+        //if (this.board[x][y])
+        //  console.log(this.board[x][y].color.charAt(0) + this.board[x][y].rule.name.substring(0,2));
+      }
       if (positionStatus == "occupied by own" || positionStatus == "out of bounds") {
         return array;
       }
@@ -255,7 +275,7 @@ class ChessLogic {
     }
     return result;
   }
-  
+    
   king(t, x, y) {
     var result = [];
     for (var dx = -1; dx <= 1; dx++) {
@@ -273,13 +293,13 @@ class ChessLogic {
     return (this.colorOfTurn() == "black") ? "white" : "black";
   }
   
-  kingNotThreatenedNextTurn(move) {
+  kingNotInCheckNextTurn(move) {
     if (this.moveExposesKing(move)) {
-      throw new ValidationError("Move lets the king to be threatened");
+      throw new ValidationError("Move puts king in check");
     }
   }
   
-  moveExposesKing(move) {
+  copyGameState() {
     var oldBoard = new Array(8);
     for (var i = 0; i < 8; i++) {
       oldBoard[i] = new Array(8);
@@ -290,49 +310,124 @@ class ChessLogic {
       }
     }
     var oldMoveNum = this.moveNum;
-    this.makeMove(move);
+    var oldCastling = {
+      black: {kingSide: this.castling.black.kingSide, queenSide: this.castling.black.queenSide},
+      white: {kingSide: this.castling.white.kingSide, queenSide: this.castling.white.queenSide}
+    };
+    var oldEnPassant = {
+      black: this.enPassant.black,
+      white: this.enPassant.white
+    };
+    return {board: oldBoard, moveNum: oldMoveNum, castling: oldCastling, enPassant: oldEnPassant};    
+  }
+  
+  restoreGameState(oldGame) {
+    this.board = oldGame.board;
+    this.moveNum = oldGame.moveNum;
+    this.castling = oldGame.castling;
+    this.enPassant = oldGame.enPassant;
+  }
+  
+  moveExposesKing(move) {
+    var oldGame = this.copyGameState();
     try {
+      this.makeMove(move, false);
       var availableMoves = this.calculateAvailableMoves();
       for (var i = 0; i < availableMoves.length; i++) {
         for (var j = 0; j < availableMoves[i].end.length; j++) {
           var coord = this.toArrayCoordinates(availableMoves[i].end[j]);
           if (this.board[coord.x][coord.y].rule == this.king && 
               this.board[coord.x][coord.y].color != this.colorOfTurn()) {
-            this.board = oldBoard;
+            this.restoreGameState(oldGame);
+            return true;
+          }
+        }
+      }
+      this.restoreGameState(oldGame);
+      return false;
+    }
+    catch (err) {
+      this.restoreGameState(oldGame);
+      throw err;
+    }
+  }
+  
+  squareUnderAttack(x, y) {
+    var oldMoveNum = this.moveNum;
+    this.moveNum++;
+    try {
+      var availableMoves = this.calculateAvailableMoves(false);
+      for (var i = 0; i < availableMoves.length; i++) {
+        for (var j = 0; j < availableMoves[i].end.length; j++) {
+          var coord = this.toArrayCoordinates(availableMoves[i].end[j]);
+          if (coord.x == x && coord.y == y) {
             this.moveNum--;
             return true;
           }
         }
       }
-      this.board = oldBoard;
       this.moveNum--;
       return false;
     }
     catch (err) {
-      this.board = oldBoard;
       this.moveNum = oldMoveNum;
-    }
-  }
-  
-  cellThreatened(x, y, color, board) {
-    var availableMoves = this.calculateAvailableMoves(color, board);
-    for (var i = 0; i < availableMoves.length; i++) {
-      for (var j = 0; j < availableMoves[i].end.length; j++) {
-        
-      }
+      throw err;
     }
   }
 
-  makeMove(move) {
+  castlingLogic(move, figure) {
+    if (figure.rule == this.king) {
+      this.castling[this.colorOfTurn()] = {kingSide: false, queenSide: false};
+    }
+    if (figure.rule == this.rook) {
+      var side = (move.start == "a8" || move.start == "a1") ? "queenSide" : "kingSide";
+      this.castling[this.colorOfTurn()][side] = false;
+    }
+    if (move.start == "e8" && move.end == "c8" && figure.rule == this.king) {
+      this.board[3][0] = this.board[0][0];
+      this.board[0][0] = "";
+    }
+    if (move.start == "e8" && move.end == "g8" && figure.rule == this.king) {
+      this.board[5][0] = this.board[7][0];
+      this.board[7][0] = "";
+    }
+    if (move.start == "e1" && move.end == "c1" && figure.rule == this.king) {
+      this.board[3][7] = this.board[0][7];
+      this.board[0][7] = "";
+    }
+    if (move.start == "e1" && move.end == "g1" && figure.rule == this.king) {
+      this.board[3][7] = this.board[0][7];
+      this.board[0][7] = "";
+    }
+    if (move.other == "castling" && move.start == "a8" && move.end == "d8" && figure.rule == this.rook) {
+      this.board[2][0] = this.board[4][0];
+      this.board[4][0] = "";
+    }
+    if (move.other == "castling" && move.start == "h8" && move.end == "f8" && figure.rule == this.rook) {
+      this.board[6][0] = this.board[4][0];
+      this.board[4][0] = "";
+    }
+    if (move.other == "castling" && move.start == "a1" && move.end == "d1" && figure.rule == this.rook) {
+      this.board[2][7] = this.board[4][7];
+      this.board[4][7] = "";
+    }
+    if (move.other == "castling" && move.start == "h1" && move.end == "f1" && figure.rule == this.rook) {
+      this.board[6][7] = this.board[4][7];
+      this.board[4][7] = "";
+    }
+  }
+  
+  makeMove(move, visualize = true) {
     var coordStart = this.toArrayCoordinates(move.start);
     var coordEnd = this.toArrayCoordinates(move.end);
     var figure = this.board[coordStart.x][coordStart.y];
     this.board[coordStart.x][coordStart.y] = "";
     this.board[coordEnd.x][coordEnd.y] = figure;
+    this.castlingLogic(move, figure);
     this.moveNum++;
-    //this.visualizeBoard();
+    if (visualize)  this.visualizeBoard();
   }
-        
+
   getAvailableMoves() {
     var availableMoves = this.calculateAvailableMoves();
     for (var i = availableMoves.length - 1; i >= 0; i--) {
@@ -356,13 +451,44 @@ class ChessLogic {
     var numbers = "87654321";
     return letters.charAt(x) + numbers.charAt(y);
   }
+  
+  castlingMove(array, side) {
+    if (side != "kingSide" && side != "queenSide") {
+      throw new ValidationError("incorrect side in castling");
+    }
+    
+    var color = this.colorOfTurn();
+    var y = (color == "black") ? 0 : 7;
+    var dir = (side == "kingSide") ? 1 : -1;
+    if (this.castling[color][side] &&
+        !this.squareUnderAttack(4, y) &&
+        !this.squareUnderAttack(4 + dir, y)) {
+      var rookMoves = [];
+      rookMoves = this.linearMoveCheck(rookMoves, (side == "kingSide") ? 7 : 0, y, -dir, 0, true);
+      var rookCanCastle = false;
+      for (var i = 0; i < rookMoves.length; i++) {
+        if (rookMoves[i].x == 4 + dir && rookMoves[i].y == y) {
+          rookCanCastle = true;
+          break;
+        }
+      }
+      if (rookCanCastle) {
+        array.push({x: 4 + (2 * dir), y: y});
+      }
+    }
+    return array;
+  }
 
-  calculateAvailableMoves() {
+  calculateAvailableMoves(calculateCastling = true) {
     var result = [];
     for (var x = 0; x < 8; x++) {
       for (var y = 0; y < 8; y++) {
         if (this.board[x][y] && this.board[x][y].color == this.colorOfTurn()) {
           var moves = this.board[x][y].rule(this, x, y);
+          if (this.board[x][y].rule == this.king && calculateCastling) {
+            moves = this.castlingMove(moves, "kingSide");
+            moves = this.castlingMove(moves, "queenSide");
+          }
           for (var i = 0; i < moves.length; i++) {
             moves[i] = this.coordinatesToChessNotation(moves[i].x, moves[i].y);
           }
