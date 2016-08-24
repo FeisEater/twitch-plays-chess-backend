@@ -16,7 +16,7 @@ class ChessLogic {
     this.placeFigures("black");
     this.placeFigures("white");
     this.moveNum = 1;
-    this.visualizeBoard();
+    //this.visualizeBoard();
   }
   
   clearBoard() {
@@ -55,7 +55,7 @@ class ChessLogic {
         }
         output += this.board[x][y].color.charAt(0) + this.board[x][y].rule.name.substring(0,2) + " ";
       }
-      //console.log(output);
+      console.log(output);
     }
   }
   
@@ -73,6 +73,7 @@ class ChessLogic {
     this.playerCanMoveFigure(move.start);
     this.playerNotCapturingOwnFigure(move.end);
     this.figureMovesAccordingToRules(move);
+    this.kingNotThreatenedNextTurn(move);
     return true;
   }
   
@@ -140,9 +141,6 @@ class ChessLogic {
     var figure = this.board[startCoord.x][startCoord.y];
     var validMoves = figure.rule(this, startCoord.x, startCoord.y);
     for (var i = 0; i < validMoves.length; i++) {
-      console.log(validMoves[i]);
-    }
-    for (var i = 0; i < validMoves.length; i++) {
       if (validMoves[i].x == endCoord.x && validMoves[i].y == endCoord.y) {
         return;
       }
@@ -177,7 +175,9 @@ class ChessLogic {
       var startPawnRow = (color == "black") ? 1 : 6;
       if (y == startPawnRow) {
         var doubleMoveY = (color == "black") ? (newY + 1) : (newY - 1);
-        result.push({x: x, y: doubleMoveY});
+        if (!t.board[x][doubleMoveY]) {
+          result.push({x: x, y: doubleMoveY});
+        }
       }
     }
     if (t.checkPosition(x - 1, newY) == "occupied by opponent") {
@@ -269,6 +269,60 @@ class ChessLogic {
     return result;
   }
   
+  invertColor() {
+    return (this.colorOfTurn() == "black") ? "white" : "black";
+  }
+  
+  kingNotThreatenedNextTurn(move) {
+    if (this.moveExposesKing(move)) {
+      throw new ValidationError("Move lets the king to be threatened");
+    }
+  }
+  
+  moveExposesKing(move) {
+    var oldBoard = new Array(8);
+    for (var i = 0; i < 8; i++) {
+      oldBoard[i] = new Array(8);
+    }
+    for (var x = 0; x < 8; x++) {
+      for (var y = 0; y < 8; y++) {
+        oldBoard[x][y] = this.board[x][y];
+      }
+    }
+    var oldMoveNum = this.moveNum;
+    this.makeMove(move);
+    try {
+      var availableMoves = this.calculateAvailableMoves();
+      for (var i = 0; i < availableMoves.length; i++) {
+        for (var j = 0; j < availableMoves[i].end.length; j++) {
+          var coord = this.toArrayCoordinates(availableMoves[i].end[j]);
+          if (this.board[coord.x][coord.y].rule == this.king && 
+              this.board[coord.x][coord.y].color != this.colorOfTurn()) {
+            this.board = oldBoard;
+            this.moveNum--;
+            return true;
+          }
+        }
+      }
+      this.board = oldBoard;
+      this.moveNum--;
+      return false;
+    }
+    catch (err) {
+      this.board = oldBoard;
+      this.moveNum = oldMoveNum;
+    }
+  }
+  
+  cellThreatened(x, y, color, board) {
+    var availableMoves = this.calculateAvailableMoves(color, board);
+    for (var i = 0; i < availableMoves.length; i++) {
+      for (var j = 0; j < availableMoves[i].end.length; j++) {
+        
+      }
+    }
+  }
+
   makeMove(move) {
     var coordStart = this.toArrayCoordinates(move.start);
     var coordEnd = this.toArrayCoordinates(move.end);
@@ -276,7 +330,25 @@ class ChessLogic {
     this.board[coordStart.x][coordStart.y] = "";
     this.board[coordEnd.x][coordEnd.y] = figure;
     this.moveNum++;
-    this.visualizeBoard();
+    //this.visualizeBoard();
+  }
+        
+  getAvailableMoves() {
+    var availableMoves = this.calculateAvailableMoves();
+    for (var i = availableMoves.length - 1; i >= 0; i--) {
+      for (var j = availableMoves[i].end.length - 1; j >= 0; j--) {
+        if (this.moveExposesKing({
+          start: availableMoves[i].start,
+          end: availableMoves[i].end[j]
+        })) {
+          availableMoves[i].end.splice(j, 1);
+        }
+      }
+      if (availableMoves[i].end.length <= 0) {
+        availableMoves.splice(i, 1);
+      }
+    }
+    return availableMoves;
   }
   
   coordinatesToChessNotation(x, y) {
@@ -284,13 +356,12 @@ class ChessLogic {
     var numbers = "87654321";
     return letters.charAt(x) + numbers.charAt(y);
   }
-  
-  getAvailableMoves() {
-    var color = this.colorOfTurn();
+
+  calculateAvailableMoves() {
     var result = [];
     for (var x = 0; x < 8; x++) {
       for (var y = 0; y < 8; y++) {
-        if (this.board[x][y] && this.board[x][y].color == color) {
+        if (this.board[x][y] && this.board[x][y].color == this.colorOfTurn()) {
           var moves = this.board[x][y].rule(this, x, y);
           for (var i = 0; i < moves.length; i++) {
             moves[i] = this.coordinatesToChessNotation(moves[i].x, moves[i].y);
@@ -302,7 +373,7 @@ class ChessLogic {
         }
       }
     }
-    return result;
+    return result;  
   }
 }
 
