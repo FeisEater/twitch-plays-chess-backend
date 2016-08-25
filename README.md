@@ -1,6 +1,8 @@
 # Twitch plays chess, backend [![Build Status](https://travis-ci.org/FeisEater/twitch-plays-chess-backend.svg?branch=master)](https://travis-ci.org/FeisEater/twitch-plays-chess-backend) [![Coverage Status](https://coveralls.io/repos/github/FeisEater/twitch-plays-chess-backend/badge.svg?branch=master)](https://coveralls.io/github/FeisEater/twitch-plays-chess-backend?branch=master)
 Backend module of the referendum based public chess app. Implemented in Node.js
 
+[App deployed here](http://46.101.249.163)
+
 # Hour log
 
 ## 15.8
