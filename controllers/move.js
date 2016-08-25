@@ -13,7 +13,7 @@ module.exports.findAll = (req, res) => {
     return Game.findOne({ over: false });
   })
   .then(foundGame => {
-    return Move.findAll({ game: foundGame});
+    return Move.findAll({ game: foundGame._id});
   })
   .then(moves => {
     ChessLogic.rebuildBoard(moves);
@@ -31,6 +31,27 @@ module.exports.findAll = (req, res) => {
   });
 };
 
+function resetGame() {
+  Promise.resolve()
+  .then(() => {
+    return Game.findOne({ over: false });
+  })
+  .then(game => {
+    game.over = true;
+    return Game.update(game, game._id);
+  })
+  .then(game => {
+    var newGame = {
+      over: false
+    };
+    return Game.saveOne(newGame);
+  })
+  .catch(err => {
+    console.log(err);
+    setTimeout(resetGame, 15000);
+  });
+}
+
 module.exports.saveOne = (req, res) => {
   var currentGame = {};
   var savedMove = {};
@@ -41,9 +62,7 @@ module.exports.saveOne = (req, res) => {
   .then(game => {
     if (ChessLogic.validateMove(req.body)) {
       currentGame = game;
-      var newMove = {};
-      newMove.start = req.body.start;
-      newMove.end = req.body.end;
+      var newMove = req.body;
       newMove.position = ChessLogic.moveNum;
       newMove.game = currentGame;
       return Move.saveOne(newMove);
@@ -51,6 +70,11 @@ module.exports.saveOne = (req, res) => {
   })
   .then(move => {
     ChessLogic.makeMove(move);
+    var gameOver = ChessLogic.gameIsOver();
+    if (gameOver) {
+      console.log(gameOver);
+      setTimeout(resetGame, 15000);
+    }
     res.status(200).send(move);
   })
   .catch(err => {

@@ -30,8 +30,7 @@ const MoveSchema = new Schema({
 
 const GameSchema = new Schema({
   created: { type: Date, default: Date.now },
-  over: { type: Boolean, default: false },
-  moves: [{type: Schema.Types.ObjectId, ref: "Move"}]
+  over: { type: Boolean, default: false }
 });
 
 module.exports = {

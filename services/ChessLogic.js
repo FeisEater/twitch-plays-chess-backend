@@ -21,9 +21,10 @@ class ChessLogic {
       white: {kingSide: true, queenSide: true}
     };
     this.enPassant = {
-      black: false,
-      white: false
+      black: -1,
+      white: -1
     };
+    this.movesToDraw = 0;
     //this.visualizeBoard();
   }
   
@@ -66,7 +67,7 @@ class ChessLogic {
       console.log(output);
     }
     console.log(this.colorOfTurn());
-    console.log(this.castling);
+    console.log(this.movesToDraw);
   }
   
   rebuildBoard(moves) {
@@ -195,6 +196,14 @@ class ChessLogic {
         }
       }
     }
+    var enPassantX = t.enPassant[t.invertColor()];
+    var enPassantY = (color == "black") ? 4 : 3;
+    if (enPassantX > -1 &&
+        Math.abs(x - enPassantX) == 1 &&
+        y == enPassantY) {
+      enPassantY = (enPassantY == 4) ? 5 : 2;
+      result.push({x: enPassantX, y: enPassantY});
+    }
     if (t.checkPosition(x - 1, newY) == "occupied by opponent") {
       result.push({x: x - 1, y: newY});
     }
@@ -299,17 +308,24 @@ class ChessLogic {
     }
   }
   
-  copyGameState() {
+  copyGameState(move) {
     var oldBoard = new Array(8);
     for (var i = 0; i < 8; i++) {
       oldBoard[i] = new Array(8);
     }
     for (var x = 0; x < 8; x++) {
       for (var y = 0; y < 8; y++) {
-        oldBoard[x][y] = this.board[x][y];
+        oldBoard[x][y] = "";
+        if (this.board[x][y]) {
+          oldBoard[x][y] = {
+            rule: this.board[x][y].rule,
+            color: this.board[x][y].color
+          };
+        }
       }
     }
     var oldMoveNum = this.moveNum;
+    var oldMovesToDraw = this.movesToDraw;
     var oldCastling = {
       black: {kingSide: this.castling.black.kingSide, queenSide: this.castling.black.queenSide},
       white: {kingSide: this.castling.white.kingSide, queenSide: this.castling.white.queenSide}
@@ -318,18 +334,33 @@ class ChessLogic {
       black: this.enPassant.black,
       white: this.enPassant.white
     };
-    return {board: oldBoard, moveNum: oldMoveNum, castling: oldCastling, enPassant: oldEnPassant};    
+    var oldMove = {
+      start: move.start,
+      end: move.end,
+      position: move.position,
+      other: move.other
+    };
+    return {
+      board: oldBoard,
+      moveNum: oldMoveNum,
+      movesToDraw: oldMovesToDraw,
+      castling: oldCastling,
+      enPassant: oldEnPassant,
+      move: oldMove
+    };    
   }
   
   restoreGameState(oldGame) {
     this.board = oldGame.board;
     this.moveNum = oldGame.moveNum;
+    this.movesToDraw = oldGame.movesToDraw;
     this.castling = oldGame.castling;
     this.enPassant = oldGame.enPassant;
+    return oldGame.move;
   }
   
   moveExposesKing(move) {
-    var oldGame = this.copyGameState();
+    var oldGame = this.copyGameState(move);
     try {
       this.makeMove(move, false);
       var availableMoves = this.calculateAvailableMoves();
@@ -338,16 +369,16 @@ class ChessLogic {
           var coord = this.toArrayCoordinates(availableMoves[i].end[j]);
           if (this.board[coord.x][coord.y].rule == this.king && 
               this.board[coord.x][coord.y].color != this.colorOfTurn()) {
-            this.restoreGameState(oldGame);
+            move = this.restoreGameState(oldGame);
             return true;
           }
         }
       }
-      this.restoreGameState(oldGame);
+      move = this.restoreGameState(oldGame);
       return false;
     }
     catch (err) {
-      this.restoreGameState(oldGame);
+      move = this.restoreGameState(oldGame);
       throw err;
     }
   }
@@ -417,13 +448,129 @@ class ChessLogic {
     }
   }
   
+  enPassantLogic(move, figure) {
+    if (figure.rule != this.pawn) {
+      this.enPassant[figure.color] = -1;
+      return;
+    }
+    var coordStart = this.toArrayCoordinates(move.start);
+    var coordEnd = this.toArrayCoordinates(move.end);
+    if (this.enPassant.black > -1 && figure.color == "white") {
+      if (Math.abs(coordStart.x - this.enPassant.black) == 1 && coordStart.y == 3 &&
+          coordEnd.x == this.enPassant.black && coordEnd.y == 2) {
+        this.board[this.enPassant.black][3] = "";
+      }
+    }
+    if (this.enPassant.white > -1 && figure.color == "black") {
+      if (Math.abs(coordStart.x - this.enPassant.white) == 1 && coordStart.y == 4 &&
+          coordEnd.x == this.enPassant.white && coordEnd.y == 5) {
+        this.board[this.enPassant.white][4] = "";
+      }
+    }
+    
+    this.enPassant[figure.color] = -1;
+    if (coordStart.y - coordEnd.y == 2) {
+      this.enPassant.white = coordStart.x;
+    }
+    if (coordEnd.y - coordStart.y == 2) {
+      this.enPassant.black = coordStart.x;
+    }
+  }
+  
+  promotionLogic(move, figure, debug) {
+    if (figure.rule != this.pawn) {
+      return;
+    }
+    var coordStart = this.toArrayCoordinates(move.start);
+    var coordEnd = this.toArrayCoordinates(move.end);
+    if ((coordEnd.y == 7 && figure.color == "black") ||
+        (coordEnd.y == 0 && figure.color == "white")) {
+      if (move.other != "knight" && move.other != "rook" && move.other != "bishop") {
+        move.other = "queen";
+      }
+      figure.rule = this[move.other];
+    }
+  }
+  
+  gameIsOver() {
+    if (this.moveToDraw >= 50) {
+      return "Draw. 50 consequtive moves without captures and pawn moves";
+    }
+    
+    var pieces = {
+      black: {pawn: 0, rook: 0, knight: 0, bishop: 0, queen: 0, king: ""},
+      white: {pawn: 0, rook: 0, knight: 0, bishop: 0, queen: 0, king: ""}
+    };
+
+    for (var x = 0; x < 8; x++) {
+      for (var y = 0; y < 8; y++) {
+        if (!this.board[x][y]) {
+          continue;
+        }
+        if (this.board[x][y].rule == this.king) {
+          pieces[this.board[x][y].color].king = {x: x, y: y};
+        } else {
+          pieces[this.board[x][y].color][this.board[x][y].rule.name]++;
+        }
+      }
+    }
+
+    if (!pieces.black.king || !pieces.white.king) {
+      throw new ValidationError("King does not exit. This shouldn't have happened, sorry");
+    }
+    if (this.getAvailableMoves().length <= 0) {
+      var color = this.colorOfTurn();
+      if (this.squareUnderAttack(pieces[color].king.x, pieces[color].king.y)) {
+        return "Checkmate, " + this.invertColor() + " wins";
+      } else {
+        return "Stalemate, " + color + " has no valid moves.";
+      }
+    }
+
+    var drawMessage = "Draw. Insufficient resources to checkmate";
+    if (pieces.black.pawn <= 0 && pieces.white.pawn <= 0 &&
+        pieces.black.queen <= 0 && pieces.white.queen <= 0 &&
+        pieces.black.rook <= 0 && pieces.white.rook <= 0) {
+      if (pieces.black.knight <= 0 && pieces.black.bishop <= 0) {
+        if (pieces.white.knight <= 0 && pieces.white.bishop <= 0) {
+          return drawMessage;
+        }
+        if (pieces.white.knight == 1 && pieces.white.bishop <= 0) {
+          return drawMessage;
+        }
+        if (pieces.white.knight <= 0 && pieces.white.bishop == 1) {
+          return drawMessage;
+        }
+      }
+      if (pieces.white.knight <= 0 && pieces.white.bishop <= 0) {
+        if (pieces.black.knight <= 0 && pieces.black.bishop <= 0) {
+          return drawMessage;
+        }
+        if (pieces.black.knight == 1 && pieces.black.bishop <= 0) {
+          return drawMessage;
+        }
+        if (pieces.black.knight <= 0 && pieces.black.bishop == 1) {
+          return drawMessage;
+        }
+      }
+    }
+    return "";
+  }
+  
   makeMove(move, visualize = true) {
     var coordStart = this.toArrayCoordinates(move.start);
     var coordEnd = this.toArrayCoordinates(move.end);
     var figure = this.board[coordStart.x][coordStart.y];
+    if (this.board[coordEnd.x][coordEnd.y] || figure.rule == this.pawn) {
+      this.movesToDraw = 0;
+    } else {
+      this.movesToDraw++;
+    }
     this.board[coordStart.x][coordStart.y] = "";
     this.board[coordEnd.x][coordEnd.y] = figure;
     this.castlingLogic(move, figure);
+    this.enPassantLogic(move, figure);
+    this.promotionLogic(move, figure);
     this.moveNum++;
     if (visualize)  this.visualizeBoard();
   }
