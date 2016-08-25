@@ -3,48 +3,48 @@ Backend module of the referendum based public chess app. Implemented in Node.js
 
 # Hour log
 
-15.8
+## 15.8
 
-2h Setting up development environment, installing vm, cloning repository, refamiliarating with framework etc.
+**2h** Setting up development environment, installing vm, cloning repository, refamiliarating with framework etc.
 
-16.8
+## 16.8
 
-1h Forking repositories
+**1h** Forking repositories
 
-17.8
+## 17.8
 
-0,5h Setting up and testing mlab database with backend
+**0,5h** Setting up and testing mlab database with backend
 
-2h Implementing chess move model and controller with format validation
+**2h** Implementing chess move model and controller with format validation
 
-18.8
+## 18.8
 
-3,5h Experimenting with deployment to DigitalOcean
+**3,5h** Experimenting with deployment to DigitalOcean
 
-19.8
+## 19.8
 
-1h Finished deployment to DigitalOcean, set up Travis
+**1h** Finished deployment to DigitalOcean, set up Travis
 
-2,5h Added Game model to contain Move instances
+**2,5h** Added Game model to contain Move instances
 
-20.8
+## 20.8
 
-2,5h Implemented turn-based movements and captures
+**2,5h** Implemented turn-based movements and captures
 
-21.8
+## 21.8
 
-2,5h Implemented most of chess movement rules
+**2,5h** Implemented most of chess movement rules
 
-22.8
+## 22.8
 
-2h Backend sends next valid moves
+**2h** Backend sends next valid moves
 
-23.8
+## 23.8
 
-3,5h Can't move into check
+**3,5h** Can't move into check
 
-24.8
+## 24.8
 
-4h Implementing castling
+**4h** Implementing castling
 
-2,5h Implemented everything chess related, including endgame. Resets game.
+**2,5h** Implemented everything chess related, including endgame. Resets game.
