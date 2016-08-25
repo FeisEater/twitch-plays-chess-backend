@@ -79,7 +79,9 @@ class ChessLogic {
   }
   
   validateMove(move) {
-    //this.visualizeBoard();
+    if (this.gameIsOver()) {
+      throw new ValidationError("Game is over.");
+    }
     this.correctFormat(move);
     this.actualMovement(move);
     this.playerCanMoveFigure(move.start);

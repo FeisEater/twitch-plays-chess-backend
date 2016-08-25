@@ -28,14 +28,25 @@ const MoveSchema = new Schema({
   other: { type: String, default: "" }
 });
 
+const VotedMoveSchema = new Schema({
+  created: { type: Date, default: Date.now },
+  game: { type: Schema.Types.ObjectId, ref: "Game", required: true },
+  start: { type: String, required: true },
+  end: { type: String, required: true },
+  other: { type: String, default: "" }
+});
+
 const GameSchema = new Schema({
   created: { type: Date, default: Date.now },
-  over: { type: Boolean, default: false }
+  lastPlayed: { type: Date, default: Date.now },
+  over: { type: Boolean, default: false },
+  timeToVote: { type: Number, default: 60 }
 });
 
 module.exports = {
   Item: mongoose.model("Item", ItemSchema),
   User: mongoose.model("User", UserSchema),
   Move: mongoose.model("Move", MoveSchema),
+  VotedMove: mongoose.model("VotedMove", VotedMoveSchema),
   Game: mongoose.model("Game", GameSchema)
 };

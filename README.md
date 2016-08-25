@@ -50,3 +50,7 @@ Backend module of the referendum based public chess app. Implemented in Node.js
 **4h** Implementing castling
 
 **2,5h** Implemented everything chess related, including endgame. Resets game.
+
+## 25.8
+
+**2,5** Implemented voting
