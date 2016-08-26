@@ -53,4 +53,8 @@ Backend module of the referendum based public chess app. Implemented in Node.js
 
 ## 25.8
 
-**2,5** Implemented voting
+**2,5h** Implemented voting
+
+## 26.8
+
+**1h** Vote results sent to frontend are now deterministic. Different ways to perform castling are recognized as the same vote
