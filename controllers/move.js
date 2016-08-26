@@ -28,6 +28,20 @@ function init() {
   });
 }
 
+function getNotification() {
+  var info = "";
+  var gameOver = ChessLogic.gameIsOver();
+  if (gameOver) {
+    info = gameOver + ". Restarting in ";
+  } else {
+    if (ChessLogic.inCheck()) {
+      info = "Check! ";
+    }
+    info += "Time to vote: ";
+  }
+  return info + timer;
+}
+
 module.exports.findAll = (req, res) => {
   var gameMoves = {};
   var currentGame = {};
@@ -49,7 +63,7 @@ module.exports.findAll = (req, res) => {
       moves: gameMoves,
       availableMoves: ChessLogic.getAvailableMoves(),
       votes: VoteCounter.generateVoteTable(votes),
-      timer: timer
+      notification: getNotification()
     });
   })
   .catch(err => {
@@ -77,6 +91,10 @@ function resetGame() {
       timeToVote: game.timeToVote
     };
     return Game.saveOne(newGame);
+  })
+  .then(game => {
+    timer = game.timeToVote;
+    setTimeout(voteTimer, 1000);
   })
   .catch(err => {
     console.log(err);

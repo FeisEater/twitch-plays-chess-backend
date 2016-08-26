@@ -650,6 +650,16 @@ class ChessLogic {
     }
     return result;  
   }
+  
+  inCheck() {
+    for (var x = 0; x < 8; x++) {
+      for (var y = 0; y < 8; y++) {
+        if (this.board[x][y].rule == this.king && this.board[x][y].color == this.colorOfTurn()) {
+          return this.squareUnderAttack(x, y);
+        }
+      }
+    }
+  }
 }
 
 module.exports = new ChessLogic();
